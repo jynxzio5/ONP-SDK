@@ -1,0 +1,18 @@
+[package]
+name = "onp-transport"
+version = "1.0.0"
+edition = "2021"
+authors = ["Opela Nexus Architecture Group"]
+description = "Async network transport engines and Tokio framed codecs for Opela Nexus Protocol (ONP)"
+license = "MIT"
+
+[dependencies]
+onp-core = { path = "../onp-core" }
+tokio = { version = "1.36", features = ["net", "io-util", "rt", "sync", "macros"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+bytes = "1.5"
+thiserror = "1.0"
+futures-util = { version = "0.3", features = ["sink"] }
+
+[dev-dependencies]
+tokio = { version = "1.36", features = ["full"] }

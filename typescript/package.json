@@ -1,0 +1,31 @@
+{
+  "name": "@opela/onp",
+  "version": "1.0.0",
+  "description": "Opela Nexus Protocol (ONP) client and server SDK for Node.js and TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/test/onp.test.js",
+    "pretest": "tsc",
+    "example:server": "tsc && node dist/examples/server.js",
+    "example:client": "tsc && node dist/examples/client.js"
+  },
+  "keywords": [
+    "opela",
+    "nexus",
+    "protocol",
+    "onp",
+    "binary",
+    "aead",
+    "chacha20-poly1305",
+    "polymorphic",
+    "zero-knowledge"
+  ],
+  "author": "Opela Nexus Architecture Group",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
