@@ -29,17 +29,14 @@ export class AntiReplayWindow {
   private maxSequence: bigint = 0n;
   private bitmap: bigint = 0n;
 
-  public checkAndUpdate(sequence: bigint): boolean {
+  /**
+   * Non-mutating sequence check against the 64-packet sliding window.
+   * MUST be performed before AEAD decryption to filter duplicate or expired frames without mutating state.
+   */
+  public check(sequence: bigint): boolean {
     if (sequence <= 0n) return false;
 
     if (sequence > this.maxSequence) {
-      const diff = sequence - this.maxSequence;
-      if (diff < 64n) {
-        this.bitmap = (this.bitmap << diff) | 1n;
-      } else {
-        this.bitmap = 1n;
-      }
-      this.maxSequence = sequence;
       return true;
     } else {
       const diff = this.maxSequence - sequence;
@@ -50,9 +47,41 @@ export class AntiReplayWindow {
       if ((this.bitmap & bit) !== 0n) {
         return false; // Replay attack detected
       }
-      this.bitmap |= bit;
       return true;
     }
+  }
+
+  /**
+   * Commits an authenticated sequence number into the sliding window.
+   * MUST only be called AFTER cryptographic MAC tag verification succeeds.
+   */
+  public commit(sequence: bigint): void {
+    if (sequence <= 0n) return;
+
+    if (sequence > this.maxSequence) {
+      const diff = sequence - this.maxSequence;
+      if (diff < 64n) {
+        this.bitmap = (this.bitmap << diff) | 1n;
+      } else {
+        this.bitmap = 1n;
+      }
+      this.maxSequence = sequence;
+    } else {
+      const diff = this.maxSequence - sequence;
+      if (diff < 64n) {
+        const bit = 1n << diff;
+        this.bitmap |= bit;
+      }
+    }
+  }
+
+  /**
+   * Legacy convenience helper (atomically checks and commits).
+   */
+  public checkAndUpdate(sequence: bigint): boolean {
+    if (!this.check(sequence)) return false;
+    this.commit(sequence);
+    return true;
   }
 }
 
@@ -179,6 +208,10 @@ export class OnpSession {
 
     const plaintext = Buffer.concat([opcodeBuf, Buffer.from(payload)]);
 
+    if (this.sendSequence >= 0xFFFFFFFFFFFFFFFFn) {
+      throw new Error('Sequence counter exhausted (nonce reuse protection triggered)');
+    }
+
     this.sendSequence += 1n;
     const nonce = constructNonce(this.epoch, this.sendSequence);
 
@@ -193,6 +226,8 @@ export class OnpSession {
 
   /**
    * Decrypts an incoming ONP wire frame, checks anti-replay window, and resolves opcode.
+   * Enforces strict two-phase validation: non-mutating sequence check prior to AEAD authentication,
+   * committing sequence state only after ChaCha20-Poly1305 verification succeeds.
    */
   public decryptPacket(frame: Uint8Array): ApplicationPacket {
     if (this.state !== 'established' || !this.recvKey || !this.opcodeTable) {
@@ -217,17 +252,22 @@ export class OnpSession {
     const nonce = encryptedBlock.subarray(0, NONCE_SIZE);
     const sequence = extractSequence(nonce);
 
-    if (!this.replayWindow.checkAndUpdate(sequence)) {
+    // 1. Non-mutating sequence check (fails if already seen or behind window)
+    if (!this.replayWindow.check(sequence)) {
       throw new Error(`Replay attack detected: sequence ${sequence} rejected by sliding window`);
     }
 
     const headerBytes = frame.subarray(0, ENVELOPE_HEADER_SIZE);
     const ciphertextAndTag = encryptedBlock.subarray(NONCE_SIZE);
 
+    // 2. Cryptographic AEAD verification
     const plaintext = decryptAead(this.recvKey, nonce, headerBytes, ciphertextAndTag);
     if (plaintext.length < 2) {
       throw new Error('Plaintext too short to contain physical opcode');
     }
+
+    // 3. Commit sequence to sliding window ONLY after authentication succeeds
+    this.replayWindow.commit(sequence);
 
     const physicalOpcode = plaintext.readUInt16LE(0);
     const logicalOpcode = this.opcodeTable.toLogical(physicalOpcode);
@@ -237,5 +277,24 @@ export class OnpSession {
       opcode: logicalOpcode,
       data,
     };
+  }
+
+  /**
+   * Zeroizes symmetric keys, nonces, and session state from memory upon teardown.
+   */
+  public destroy(): void {
+    if (this.sendKey) {
+      this.sendKey.fill(0);
+      this.sendKey = null;
+    }
+    if (this.recvKey) {
+      this.recvKey.fill(0);
+      this.recvKey = null;
+    }
+    this.localNonce.fill(0);
+    this.peerNonce.fill(0);
+    this.keyExchange = null;
+    this.opcodeTable = null;
+    this.state = 'uninitialized';
   }
 }

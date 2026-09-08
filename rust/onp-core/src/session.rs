@@ -44,10 +44,31 @@ impl AntiReplayWindow {
         }
     }
 
-    /// Validates whether a sequence number is acceptable and updates window state.
-    pub fn check_and_update(&mut self, sequence: u64) -> bool {
+    /// Pure validation check against the 64-packet sliding window (non-mutating).
+    /// MUST be performed before AEAD tag verification to reject duplicates and expired packets.
+    pub fn check(&self, sequence: u64) -> bool {
         if sequence == 0 {
             return false;
+        }
+
+        if sequence > self.max_sequence {
+            true
+        } else {
+            let diff = self.max_sequence - sequence;
+            if diff >= 64 {
+                false
+            } else {
+                let bit = 1u64 << diff;
+                (self.bitmap & bit) == 0
+            }
+        }
+    }
+
+    /// Commits an authenticated sequence number into the sliding window.
+    /// MUST only be called AFTER successful ChaCha20-Poly1305 MAC tag verification.
+    pub fn commit(&mut self, sequence: u64) {
+        if sequence == 0 {
+            return;
         }
 
         if sequence > self.max_sequence {
@@ -58,23 +79,21 @@ impl AntiReplayWindow {
                 self.bitmap = 1;
             }
             self.max_sequence = sequence;
-            true
         } else {
             let diff = self.max_sequence - sequence;
-            if diff >= 64 {
-                // Too old, fell outside sliding window
-                false
-            } else {
-                let bit = 1u64 << diff;
-                if (self.bitmap & bit) != 0 {
-                    // Already received
-                    false
-                } else {
-                    self.bitmap |= bit;
-                    true
-                }
+            if diff < 64 {
+                self.bitmap |= 1u64 << diff;
             }
         }
+    }
+
+    /// Validates whether a sequence number is acceptable and updates window state (atomic helper).
+    pub fn check_and_update(&mut self, sequence: u64) -> bool {
+        if !self.check(sequence) {
+            return false;
+        }
+        self.commit(sequence);
+        true
     }
 }
 
@@ -285,7 +304,10 @@ impl OnpSession {
         plaintext.extend_from_slice(&physical_opcode.to_le_bytes());
         plaintext.extend_from_slice(payload);
 
-        // 3. Monotonic sequence counter
+        // 3. Monotonic sequence counter with exhaustion guard
+        if self.send_sequence == u64::MAX {
+            return Err(OnpError::SequenceExhausted);
+        }
         self.send_sequence += 1;
         let nonce = construct_nonce(self.epoch, self.send_sequence);
 
@@ -308,6 +330,7 @@ impl OnpSession {
 
     /// Decrypts an incoming ONP wire frame, checks anti-replay window, verifies AEAD tag,
     /// and maps the polymorphic opcode back to the application logical opcode.
+    /// Strictly verifies AEAD MAC tag BEFORE committing sequence state to sliding window.
     pub fn decrypt_packet(&mut self, frame: &[u8]) -> OnpResult<ApplicationPacket> {
         if self.state != SessionState::Established {
             return Err(OnpError::HandshakeStateError {
@@ -340,12 +363,12 @@ impl OnpSession {
             });
         }
 
-        // 1. Extract 12-byte Nonce and verify anti-replay sequence
+        // 1. Extract 12-byte Nonce and verify anti-replay sequence (NON-MUTATING)
         let mut nonce = [0u8; NONCE_SIZE];
         nonce.copy_from_slice(&encrypted_block[..NONCE_SIZE]);
         let sequence = extract_sequence(&nonce);
 
-        if !self.replay_window.check_and_update(sequence) {
+        if !self.replay_window.check(sequence) {
             return Err(OnpError::ReplayDetected { sequence });
         }
 
@@ -363,7 +386,10 @@ impl OnpSession {
             });
         }
 
-        // 3. Extract physical opcode and resolve to logical opcode
+        // 3. Commit sequence to window ONLY after MAC tag verification succeeds
+        self.replay_window.commit(sequence);
+
+        // 4. Extract physical opcode and resolve to logical opcode
         let physical_opcode = u16::from_le_bytes([plaintext[0], plaintext[1]]);
         let opcode_table = self.opcode_table.as_ref().unwrap();
         let logical_opcode = opcode_table.to_logical(physical_opcode)?;
@@ -374,5 +400,26 @@ impl OnpSession {
             opcode: logical_opcode,
             data: payload_data,
         })
+    }
+
+    /// Securely zeroizes symmetric keys, nonces, and session material in memory.
+    pub fn destroy(&mut self) {
+        if let Some(mut key) = self.send_key.take() {
+            key.fill(0);
+        }
+        if let Some(mut key) = self.recv_key.take() {
+            key.fill(0);
+        }
+        self.local_nonce.fill(0);
+        self.peer_nonce.fill(0);
+        self.key_exchange = None;
+        self.opcode_table = None;
+        self.state = SessionState::Uninitialized;
+    }
+}
+
+impl Drop for OnpSession {
+    fn drop(&mut self) {
+        self.destroy();
     }
 }

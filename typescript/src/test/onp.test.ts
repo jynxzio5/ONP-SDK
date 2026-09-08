@@ -69,6 +69,56 @@ test('OnpSession: end-to-end handshake, encryption, and replay protection', () =
   assert.deepStrictEqual(clientReceived.data, reply);
 });
 
+test('OnpSession: Window-Jumping DoS resistance (Adversarial Security Test)', () => {
+  const client = new OnpSession('client');
+  const server = new OnpSession('server');
+
+  const syn = client.createHandshakeSyn();
+  const ack = server.processHandshakeSyn(syn);
+  client.processHandshakeAck(ack);
+
+  // Packet 1 (valid, seq 1)
+  const f1 = client.encryptPacket(LogicalOpcode.SysPing, Buffer.from('PING_1'));
+  const p1 = server.decryptPacket(f1);
+  assert.strictEqual(p1.opcode, LogicalOpcode.SysPing);
+
+  // Attacker crafts unauthenticated forged packet with sequence 1,000,000
+  // Nonce with seq 1,000,000 + random forged ciphertext & MAC tag
+  const forgedNonce = Buffer.alloc(12);
+  forgedNonce.writeBigUInt64LE(1000000n, 4);
+  const forgedPayload = Buffer.concat([forgedNonce, Buffer.alloc(32).fill(0xAA)]);
+  const forgedHeader = new EnvelopeHeader(Flags.ENCRYPTED, forgedPayload.length);
+  const forgedFrame = Buffer.concat([Buffer.from(forgedHeader.encode()), forgedPayload]);
+
+  // Forged packet MUST fail cryptographic authentication
+  assert.throws(() => {
+    server.decryptPacket(forgedFrame);
+  });
+
+  // Legitimate Packet 2 (seq 2) MUST still succeed (window was not poisoned)
+  const f2 = client.encryptPacket(LogicalOpcode.SysPing, Buffer.from('PING_2'));
+  const p2 = server.decryptPacket(f2);
+  assert.strictEqual(p2.opcode, LogicalOpcode.SysPing);
+  assert.deepStrictEqual(p2.data, Buffer.from('PING_2'));
+});
+
+test('OnpSession: destroy() zeroizes keys and resets state', () => {
+  const client = new OnpSession('client');
+  const server = new OnpSession('server');
+
+  const syn = client.createHandshakeSyn();
+  const ack = server.processHandshakeSyn(syn);
+  client.processHandshakeAck(ack);
+
+  assert.strictEqual(client.isEstablished(), true);
+  client.destroy();
+  assert.strictEqual(client.isEstablished(), false);
+
+  assert.throws(() => {
+    client.encryptPacket(LogicalOpcode.SysPing, Buffer.from('TEST'));
+  }, /Session is not established/);
+});
+
 test('OnpSocket: live TCP client-server round-trip', async () => {
   let serverSocketReady: any = null;
 

@@ -148,10 +148,28 @@ $$\text{PhysicalOpcode} = (\text{HMAC-SHA256}(\text{SessionOpcodeSeed}, L)_{0..1
 ## 6. Anti-Replay & Sequence Security
 
 Each packet transmission increments the 64-bit sequence counter inside the 96-bit Nonce.
-Endpoints maintain a sliding window of size $W = 64$:
-1. If $\text{Seq} > \text{MaxSeq}$: the window advances and the bit is set.
-2. If $\text{Seq} \le \text{MaxSeq} - W$: the packet is dropped immediately as expired.
-3. If $\text{Seq}$ was already received in the current window: the packet is rejected as a duplicate replay attack.
+Endpoints maintain a sliding window of size $W = 64$ enforced via strict **Two-Phase Validation** to prevent window-jumping denial-of-service (DoS) attacks:
+
+### 6.1 Two-Phase Validation Lifecycle
+1. **Phase 1: Pre-Authentication Check (Non-Mutating)**
+   - Prior to cryptographic operations, the receiver checks $\text{Seq}$ against the sliding window:
+     - If $\text{Seq} \le 0$: Drop immediately.
+     - If $\text{Seq} \le \text{MaxSeq} - W$: Drop immediately as expired / outside window.
+     - If $\text{Seq}$ has already been received (bit set in bitmap): Drop immediately as a duplicate replay attack.
+     - **Crucially**: The receiver state ($\text{MaxSeq}$ and bitmap) **MUST NOT** be mutated during this phase.
+2. **Phase 2: AEAD Decryption & Integrity Verification**
+   - The frame is authenticated and decrypted using ChaCha20-Poly1305 with the envelope header as Additional Authenticated Data (AAD).
+   - If MAC tag verification fails or ciphertext is corrupted, the frame is rejected, and the anti-replay window state remains completely untouched.
+3. **Phase 3: Atomic Window State Commit**
+   - Only **after** MAC verification succeeds:
+     - If $\text{Seq} > \text{MaxSeq}$: Advance $\text{MaxSeq} = \text{Seq}$ and shift the bitmap accordingly.
+     - If $\text{Seq} \le \text{MaxSeq}$: Set the bit corresponding to $\text{MaxSeq} - \text{Seq}$.
+
+### 6.2 Sequence Counter Exhaustion & Nonce Reuse Protection
+- Sequence numbers are 64-bit unsigned integers. If the counter reaches $\text{0xFFFFFFFFFFFFFFFF}$ ($2^{64}-1$), the session immediately fails closed and refuses all further encryptions to guarantee zero nonce reuse. A fresh key exchange (renegotiation) is required.
+
+### 6.3 Memory Zeroization
+- Upon session termination (`destroy()` / `Drop`), all sensitive session keys (`ClientWriteKey`, `ServerWriteKey`), nonces, and dynamic opcode maps MUST be zeroized in RAM immediately.
 
 ---
 

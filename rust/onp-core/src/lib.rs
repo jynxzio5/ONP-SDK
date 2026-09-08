@@ -130,4 +130,59 @@ mod tests {
         assert_eq!(c_received.opcode, LogicalOpcode::AuthResult);
         assert_eq!(c_received.data, server_reply);
     }
+
+    #[test]
+    fn test_window_jumping_dos_resistance() {
+        use crate::constants::NONCE_SIZE;
+
+        let mut client = OnpSession::new_client();
+        let mut server = OnpSession::new_server();
+
+        let syn = client.create_handshake_syn().unwrap();
+        let ack = server.process_handshake_syn(&syn).unwrap();
+        client.process_handshake_ack(&ack).unwrap();
+
+        // Packet 1 (valid, seq 1)
+        let f1 = client.encrypt_packet(LogicalOpcode::SysPing, b"PING_1").unwrap();
+        let p1 = server.decrypt_packet(&f1).unwrap();
+        assert_eq!(p1.opcode, LogicalOpcode::SysPing);
+
+        // Attacker creates unauthenticated forged frame with seq 1,000,000
+        let mut forged_nonce = [0u8; NONCE_SIZE];
+        forged_nonce[4..12].copy_from_slice(&1_000_000u64.to_le_bytes());
+
+        let mut forged_payload = Vec::new();
+        forged_payload.extend_from_slice(&forged_nonce);
+        forged_payload.extend_from_slice(&[0xAA; 32]); // Fake ciphertext + tag
+
+        let header = EnvelopeHeader::new(flags::ENCRYPTED, forged_payload.len() as u32);
+        let mut forged_frame = Vec::new();
+        forged_frame.extend_from_slice(&header.encode());
+        forged_frame.extend_from_slice(&forged_payload);
+
+        // Forged frame must fail decryption
+        assert!(server.decrypt_packet(&forged_frame).is_err());
+
+        // Legitimate Packet 2 (seq 2) must still succeed (window was NOT poisoned)
+        let f2 = client.encrypt_packet(LogicalOpcode::SysPing, b"PING_2").unwrap();
+        let p2 = server.decrypt_packet(&f2).unwrap();
+        assert_eq!(p2.opcode, LogicalOpcode::SysPing);
+        assert_eq!(p2.data, b"PING_2");
+    }
+
+    #[test]
+    fn test_session_destroy() {
+        let mut client = OnpSession::new_client();
+        let mut server = OnpSession::new_server();
+
+        let syn = client.create_handshake_syn().unwrap();
+        let ack = server.process_handshake_syn(&syn).unwrap();
+        client.process_handshake_ack(&ack).unwrap();
+
+        assert!(client.is_established());
+        client.destroy();
+        assert!(!client.is_established());
+
+        assert!(client.encrypt_packet(LogicalOpcode::SysPing, b"FAIL").is_err());
+    }
 }

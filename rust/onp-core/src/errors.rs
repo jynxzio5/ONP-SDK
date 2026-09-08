@@ -25,6 +25,9 @@ pub enum OnpError {
     #[error("Replay attack detected: sequence number {sequence} was already processed or falls outside the 64-packet window")]
     ReplayDetected { sequence: u64 },
 
+    #[error("Sequence counter exhausted: maximum 64-bit sequence reached, session must be renegotiated to prevent nonce reuse")]
+    SequenceExhausted,
+
     #[error("Handshake sequence violation: unexpected state {state} for received packet with flags {flags:#04X}")]
     HandshakeStateError { state: &'static str, flags: u8 },
 
