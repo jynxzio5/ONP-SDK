@@ -16,6 +16,7 @@ Welcome to the official technical documentation for the Opela Nexus Protocol (ON
 - [Cryptographic Primitives](02-security-and-crypto/cryptographic-primitives.md): RFC standards compliance (RFC 7748, RFC 8439, RFC 8032, RFC 5869).
 - [Polymorphic Rolling Opcodes](02-security-and-crypto/polymorphic-opcodes.md): Mathematical explanation of seed-based opcode permutation and anti-fingerprinting.
 - [Anti-Replay Sliding Window](02-security-and-crypto/anti-replay-window.md): Monotonic 96-bit sequence validation and 64-packet bitmap mechanics.
+- [ONP vs. HTTPS Architecture](02-security-and-crypto/onp-vs-https.md): In-depth comparison of local proxy interception resistance, DPI metadata leakage, and performance trade-offs.
 
 ### 3. Language & Framework Integration Guides
 - [C and C++ Integration](03-guides/cpp-integration.md): Native C-ABI FFI (`onp.h`), CMake, Unreal Engine, and WinSock/POSIX socket loops.

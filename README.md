@@ -30,6 +30,7 @@ Comprehensive technical guides and RFC specifications are available in the [`doc
 - [Cryptographic Primitives Reference](docs/02-security-and-crypto/cryptographic-primitives.md)
 - [Polymorphic Rolling Opcodes Guide](docs/02-security-and-crypto/polymorphic-opcodes.md)
 - [Anti-Replay Sliding Window Filter](docs/02-security-and-crypto/anti-replay-window.md)
+- [ONP vs. HTTPS: Security & Trade-Offs](docs/02-security-and-crypto/onp-vs-https.md)
 - [C and C++ Integration Guide](docs/03-guides/cpp-integration.md)
 - [Mobile Integration Guide (Android, iOS, Flutter, React Native)](docs/03-guides/mobile-integration.md)
 - [Rust Integration Guide](docs/03-guides/getting-started-rust.md)
