@@ -19,6 +19,7 @@ Welcome to the official technical documentation for the Opela Nexus Protocol (ON
 
 ### 3. Language & Framework Integration Guides
 - [C and C++ Integration](03-guides/cpp-integration.md): Native C-ABI FFI (`onp.h`), CMake, Unreal Engine, and WinSock/POSIX socket loops.
+- [Mobile Integration (Android, iOS, React Native, Flutter)](03-guides/mobile-integration.md): Android NDK/JNI (Kotlin), iOS XCFramework (Swift), Dart FFI, and React Native.
 - [Rust Integration](03-guides/getting-started-rust.md): Low-level in-memory framing and Tokio TCP server engines (`onp-core`, `onp-transport`).
 - [TypeScript & JavaScript](03-guides/getting-started-typescript.md): Node.js, WebViews (Tauri/Electron), and browser client/server usage.
 - [Python Integration](03-guides/python-integration.md): Standard library `ctypes` bindings, native `OnpSession` class, and `asyncio` networking.

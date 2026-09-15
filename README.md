@@ -30,6 +30,7 @@ Comprehensive technical guides and RFC specifications are available in the [`doc
 - [Polymorphic Rolling Opcodes Guide](docs/02-security-and-crypto/polymorphic-opcodes.md)
 - [Anti-Replay Sliding Window Filter](docs/02-security-and-crypto/anti-replay-window.md)
 - [C and C++ Integration Guide](docs/03-guides/cpp-integration.md)
+- [Mobile Integration Guide (Android, iOS, Flutter, React Native)](docs/03-guides/mobile-integration.md)
 - [Rust Integration Guide](docs/03-guides/getting-started-rust.md)
 - [TypeScript & JavaScript Guide](docs/03-guides/getting-started-typescript.md)
 - [Python Integration Guide](docs/03-guides/python-integration.md)
@@ -118,6 +119,7 @@ ONP has zero native C/C++ compilation requirements and runs across all major ope
 | **Rust** | [`rust/onp-core`](rust/onp-core/)<br>[`rust/onp-transport`](rust/onp-transport/) | High-performance zero-copy deserialization (`bytes`), Tokio async networking, polymorphic opcode engine, ChaCha20-Poly1305. |
 | **TypeScript / JavaScript** | [`typescript/`](typescript/) | Pure WebCrypto & Noble ciphers, zero external C++ bindings, universal isomorphic support across Node.js, WebViews, and browsers. |
 | **C / C++** | [`rust/onp-ffi`](rust/onp-ffi/)<br>[`include/onp.h`](rust/onp-ffi/include/onp.h) | Stable C-ABI dynamic (`.dll`/`.so`/`.dylib`) and static (`.lib`/`.a`) libraries for Unreal Engine, custom game engines, and native servers. |
+| **Mobile (Android & iOS)** | [`docs/03-guides/mobile-integration.md`](docs/03-guides/mobile-integration.md) | Kotlin/JNI on Android, Swift/XCFramework on iOS, Flutter Dart FFI, and React Native. |
 | **Python** | [`docs/03-guides/python-integration.md`](docs/03-guides/python-integration.md) | Standard library `ctypes` bindings and `asyncio` networking with native performance. |
 | **C# (.NET) / Unity** | [`docs/03-guides/csharp-dotnet.md`](docs/03-guides/csharp-dotnet.md) | P/Invoke `DllImport`, memory pinning, and Unity game engine client integration. |
 | **Go** | [`docs/03-guides/golang-integration.md`](docs/03-guides/golang-integration.md) | Cgo bindings with zero-copy buffer passing and `net.Conn` streaming sockets. |
