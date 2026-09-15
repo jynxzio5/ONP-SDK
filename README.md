@@ -1,9 +1,22 @@
-# 🛡️ Opela Nexus Protocol (ONP)
+<p align="center">
+  <img src="assets/onp-logo.png" alt="Opela Nexus Protocol (ONP) Logo" width="240" />
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Protocol Version: 1.0](https://img.shields.io/badge/ONP-v1.0.0-emerald.svg)](SPECIFICATION.md)
-[![Rust: 2021 Edition](https://img.shields.io/badge/Rust-1.75%2B-orange.svg)](rust/)
-[![TypeScript: 5.x](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](typescript/)
+<h1 align="center">Opela Nexus Protocol (ONP)</h1>
+
+<p align="center">
+  <strong>Next-Generation Zero-Knowledge Polymorphic Binary Transport Protocol</strong>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="SPECIFICATION.md"><img src="https://img.shields.io/badge/ONP-v1.0.0-emerald.svg" alt="Protocol Version: 1.0" /></a>
+  <a href="rust/"><img src="https://img.shields.io/badge/Rust-1.75%2B-orange.svg" alt="Rust: 2021 Edition" /></a>
+  <a href="typescript/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript: 5.x" /></a>
+  <a href="https://github.com/jynxzio5/Opela-Nexus-Protocol-ONP/packages"><img src="https://img.shields.io/badge/GitHub%20Packages-%40jynxzio5%2Fonp-crimson.svg" alt="GitHub Package" /></a>
+</p>
+
+---
 
 **Opela Nexus Protocol (ONP)** is a high-performance, proprietary binary transport protocol designed for uncompromising wire confidentiality, sub-millisecond latency, and automated replay protection.
 
