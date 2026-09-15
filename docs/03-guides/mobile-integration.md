@@ -399,7 +399,7 @@ class OnpFlutterSession {
 
 For React Native, developers have two architectural options:
 
-1. **Pure TypeScript Engine**: Use `@jynxzio5/onp` directly with the `react-native-quick-crypto` or WebCrypto polyfill.
+1. **Pure TypeScript Engine**: Use `@opela-team/onp` directly with the `react-native-quick-crypto` or WebCrypto polyfill.
 2. **JSI / TurboModule**: Bind directly to `libonp_ffi.so` (Android) and `libonp_ffi.a` (iOS) using modern React Native C++ TurboModules for zero-copy binary bridge performance.
 
 ---

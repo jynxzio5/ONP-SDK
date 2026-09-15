@@ -79,7 +79,7 @@ The server responds with opcode `ONP_TUNNEL_RESPONSE` (`0x0081`):
 ## 4. Code Example
 
 ```typescript
-import { OnpWebSocketClient } from '@jynxzio5/onp';
+import { OnpWebSocketClient } from '@opela-team/onp';
 
 const client = new OnpWebSocketClient({ url: 'wss://example.com/ws' });
 

@@ -13,7 +13,7 @@
   <a href="SPECIFICATION.md"><img src="https://img.shields.io/badge/ONP-v1.0.0-emerald.svg" alt="Protocol Version: 1.0" /></a>
   <a href="rust/"><img src="https://img.shields.io/badge/Rust-1.75%2B-orange.svg" alt="Rust: 2021 Edition" /></a>
   <a href="typescript/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript: 5.x" /></a>
-  <a href="https://github.com/jynxzio5/ONP-SDK/packages"><img src="https://img.shields.io/badge/GitHub%20Packages-%40jynxzio5%2Fonp-crimson.svg" alt="GitHub Package" /></a>
+  <a href="https://www.npmjs.com/package/@opela-team/onp"><img src="https://img.shields.io/npm/v/@opela-team/onp.svg?color=crimson" alt="npm package" /></a>
   <a href="docs/"><img src="https://img.shields.io/badge/Documentation-Complete-purple.svg" alt="Documentation" /></a>
 </p>
 
@@ -172,22 +172,16 @@ Every ONP packet is structured into a strictly packed binary layout without dyna
 ## Quick Start: TypeScript / JavaScript
 
 ### Installation
-Add the GitHub Packages registry to your `.npmrc` file:
-
-```ini
-@jynxzio5:registry=https://npm.pkg.github.com
-```
-
-Install the package:
+Install the official client/server SDK from the public npm registry:
 
 ```bash
-npm install @jynxzio5/onp
+npm install @opela-team/onp
 ```
 
 ### WebSocket Client Example
 
 ```typescript
-import { OnpWebSocketClient } from '@jynxzio5/onp';
+import { OnpWebSocketClient } from '@opela-team/onp';
 
 const client = new OnpWebSocketClient({
   url: 'wss://example.com/ws',

@@ -1,5 +1,5 @@
 {
-  "name": "@jynxzio5/onp",
+  "name": "@opela-team/onp",
   "version": "1.0.0",
   "description": "Opela Nexus Protocol (ONP) client and server SDK for Node.js and TypeScript",
   "main": "dist/index.js",

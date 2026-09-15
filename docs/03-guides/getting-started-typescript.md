@@ -2,19 +2,10 @@
 
 ## Installation
 
-The TypeScript SDK is published to GitHub Packages under the `@jynxzio5` scope.
-
-### 1. Configure npm Registry
-Create or update your `.npmrc` file:
-
-```ini
-@jynxzio5:registry=https://npm.pkg.github.com
-```
-
-### 2. Install Package
+Install the official client and server SDK from the public npm registry:
 
 ```bash
-npm install @jynxzio5/onp
+npm install @opela-team/onp
 ```
 
 ---
@@ -26,7 +17,7 @@ npm install @jynxzio5/onp
 The `OnpWebSocketClient` manages the full connection lifecycle, including automated Curve25519 handshakes, frame encoding, and exponential backoff reconnection:
 
 ```typescript
-import { OnpWebSocketClient } from '@jynxzio5/onp';
+import { OnpWebSocketClient } from '@opela-team/onp';
 
 const client = new OnpWebSocketClient({
   url: 'wss://example.com/ws',

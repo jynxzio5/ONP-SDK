@@ -30,7 +30,7 @@ Because command opcodes are polymorphically permuted on every session, an observ
 
 ## 4. Does ONP require native C++ compiler tools on Node.js?
 
-No. The TypeScript implementation (`@jynxzio5/onp`) uses audited, pure JavaScript/WebCrypto implementations from `@noble/curves`, `@noble/ciphers`, and `@noble/hashes`. It installs and runs instantly without `node-gyp`, Python, or C++ compilers.
+No. The TypeScript implementation (`@opela-team/onp`) uses audited, pure JavaScript/WebCrypto implementations from `@noble/curves`, `@noble/ciphers`, and `@noble/hashes`. It installs and runs instantly without `node-gyp`, Python, or C++ compilers.
 
 ---
 
