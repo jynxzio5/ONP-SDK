@@ -13,6 +13,7 @@
   <a href="SPECIFICATION.md"><img src="https://img.shields.io/badge/ONP-v1.0.0-emerald.svg" alt="Protocol Version: 1.0" /></a>
   <a href="rust/"><img src="https://img.shields.io/badge/Rust-1.75%2B-orange.svg" alt="Rust: 2021 Edition" /></a>
   <a href="typescript/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript: 5.x" /></a>
+  <a href="https://github.com/jynxzio5/ONP-SDK/packages"><img src="https://img.shields.io/badge/GitHub%20Packages-%40jynxzio5%2Fonp-crimson.svg" alt="GitHub Package" /></a>
   <a href="docs/"><img src="https://img.shields.io/badge/Documentation-Complete-purple.svg" alt="Documentation" /></a>
 </p>
 
