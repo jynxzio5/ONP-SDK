@@ -13,8 +13,28 @@
   <a href="SPECIFICATION.md"><img src="https://img.shields.io/badge/ONP-v1.0.0-emerald.svg" alt="Protocol Version: 1.0" /></a>
   <a href="rust/"><img src="https://img.shields.io/badge/Rust-1.75%2B-orange.svg" alt="Rust: 2021 Edition" /></a>
   <a href="typescript/"><img src="https://img.shields.io/badge/TypeScript-5.x-blue.svg" alt="TypeScript: 5.x" /></a>
-  <a href="https://github.com/jynxzio5/Opela-Nexus-Protocol-ONP/packages"><img src="https://img.shields.io/badge/GitHub%20Packages-%40jynxzio5%2Fonp-crimson.svg" alt="GitHub Package" /></a>
+  <a href="docs/"><img src="https://img.shields.io/badge/Documentation-Complete-purple.svg" alt="Documentation" /></a>
 </p>
+
+---
+
+## Documentation Index
+
+Comprehensive technical guides and RFC specifications are available in the [`docs/`](docs/) directory:
+
+- [Protocol Specification (RFC v1.0.0)](docs/01-architecture/protocol-specification.md)
+- [Cryptographic Handshake & Key Derivation](docs/01-architecture/handshake-flow.md)
+- [Session State Machine & Memory Zeroization](docs/01-architecture/state-machine.md)
+- [Threat Model & DPI Defense](docs/02-security-and-crypto/threat-model.md)
+- [Cryptographic Primitives Reference](docs/02-security-and-crypto/cryptographic-primitives.md)
+- [Polymorphic Rolling Opcodes Guide](docs/02-security-and-crypto/polymorphic-opcodes.md)
+- [Anti-Replay Sliding Window Filter](docs/02-security-and-crypto/anti-replay-window.md)
+- [Getting Started with TypeScript](docs/03-guides/getting-started-typescript.md)
+- [Getting Started with Rust Core](docs/03-guides/getting-started-rust.md)
+- [Universal ONP Wire Tunnel Guide](docs/03-guides/universal-wire-tunnel.md)
+- [Error Handling & Resilience](docs/03-guides/error-handling.md)
+- [Performance & Overhead Benchmarks](docs/04-benchmarks/performance-comparison.md)
+- [Frequently Asked Questions (FAQ)](docs/05-faq.md)
 
 ---
 
