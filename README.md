@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/onp-logo.png" alt="Opela Nexus Protocol (ONP) Logo" width="240" />
+  <img src="assets/onp-logo.png" alt="Opela Nexus Protocol (ONP) Logo" width="280" />
 </p>
 
 <h1 align="center">Opela Nexus Protocol (ONP)</h1>
@@ -18,90 +18,226 @@
 
 ---
 
-**Opela Nexus Protocol (ONP)** is a high-performance, proprietary binary transport protocol designed for uncompromising wire confidentiality, sub-millisecond latency, and automated replay protection.
+## Overview
 
-Unlike standard web protocols (HTTP/REST, JSON, WebSockets with text payloads), ONP replaces human-readable headers and static command identifiers with **ephemeral Curve25519 key agreements**, **authenticated ChaCha20-Poly1305 encryption**, and **polymorphic rolling opcodes** that mutate on every session.
+Opela Nexus Protocol (ONP) is a high-throughput, low-latency, zero-knowledge binary communication protocol designed to eliminate the metadata leakage, performance overhead, and predictable attack surface of standard application-layer protocols such as HTTP/REST, GraphQL, and plaintext WebSockets.
 
----
+Modern internet traffic is vulnerable to Deep Packet Inspection (DPI), heuristic traffic shaping, stateful firewall interception, and MITM analysis because traditional protocols transmit predictable plaintext headers (such as `Host`, `User-Agent`, and `Authorization`), static API endpoints, and recognizable JSON schemas.
 
-## ⚡ Key Highlights
-
-- **Zero-Knowledge Wire Footprint**: Wireshark, ISPs, and proxies see only random pseudorandom binary noise.
-- **Polymorphic Rolling Opcodes**: Command IDs change dynamically per session; static packet pattern matching is impossible.
-- **Microsecond Deserialization**: Binary framing processed directly in memory without string parsing or recursive JSON parsing.
-- **Anti-Replay Sliding Window**: 96-bit monotonic nonce sequence dropping out-of-order or duplicate packets in $O(1)$ CPU time.
-- **Multi-Language Architecture**: Standalone implementations in **Rust** (`crates/onp-core`) and **TypeScript / Node.js** (`typescript/`) ready to drop into any project.
+ONP replaces human-readable text and static endpoints with an ultra-compact 8-byte binary envelope, ephemeral Curve25519 (X25519) key agreements, hardware-accelerated ChaCha20-Poly1305 authenticated encryption, and dynamically mutating polymorphic rolling opcodes. Beyond the initial framing envelope, every byte transmitted over the wire is indistinguishable from cryptographic pseudorandom noise.
 
 ---
 
-## 📂 Repository Layout
+## Core Pillars & Architectural Principles
+
+### 1. Zero Text on the Wire
+Traditional web requests spend between 400 and 1,200 bytes transmitting ASCII metadata before any payload bytes are transferred. ONP completely eliminates ASCII serialization over the wire. All control metadata is packed into fixed-size numeric bitfields, reducing protocol framing overhead by over 95%.
+
+### 2. Polymorphic Rolling Opcodes
+Network monitoring appliances, firewalls, and reverse-engineers rely on static command identifiers to fingerprint actions (such as identifying login requests, download triggers, or game state updates). 
+
+ONP neutralizes this vector via cryptographically seeded opcode permutation:
+- During the cryptographic handshake, an ephemeral 32-byte Opcode Seed is derived.
+- Logical application opcodes (e.g., `DATA_STREAM`, `DOWNLOAD_MANIFEST`, `GAME_UPDATE`) are passed through an HMAC-SHA256 deterministic shuffle function.
+- The resulting physical wire opcode changes on every single connection. An attacker inspecting two identical actions across two sessions observes completely unrelated numeric values.
+
+### 3. Ephemeral Forward Secrecy & Mutual Verification
+- **Perfect Forward Secrecy (PFS)**: Each session generates dynamic Curve25519 keypairs in RAM. Master secrets are derived via HKDF-SHA256 and never written to disk.
+- **Ed25519 Host Key Verification**: During the connection handshake, the server signs a 96-byte transcript `[ClientPub || ClientNonce || ServerPub || ServerNonce]` using its private host identity key. The client verifies this signature before session keys are active, rendering Man-in-the-Middle (MitM) proxies, TLS splitters, and spoofed endpoints immediately non-functional.
+- **Memory Zeroization**: Calling session teardown explicitly scrubs ephemeral keys and state vectors from memory, preventing memory-dump recovery.
+
+### 4. Anti-Replay Sliding Window
+Every encrypted packet carries a 96-bit monotonic sequence counter validated against a 64-bit sliding window filter:
+- Duplicated or replayed packets are rejected at the lowest network layer in O(1) CPU time.
+- Packets jumping out of the sliding window are immediately dropped, preventing state-exhaustion and replay denial-of-service vectors.
+
+### 5. Universal Wire Tunnel
+ONP provides an integrated Wire Tunnel interface that transparently encapsulates standard HTTP/REST requests inside encrypted binary WebSocket or TCP frames. APIs, manifest delivery endpoints, and configuration fetches execute through the encrypted stream without exposing URLs, query parameters, or target hostnames to intermediate network hops.
+
+---
+
+## Supported Projects & Use Cases
+
+ONP is designed for applications requiring high-throughput binary transmission, wire-level confidentiality, and immunity to network throttling:
+
+- **Game Launchers & Distribution Clients**: Fast, secure delivery of manifests, differential update payloads, and authentication tokens without exposing backend storage origins or content pipelines.
+- **Real-Time Multiplayer & Engine Networking**: Low-latency binary input replication, player state synchronization, and lobby management for game engines (Unreal Engine, Unity, Godot, Bevy).
+- **Private Peer-to-Peer & Mesh Overlays**: Encrypted node-to-node relay systems and decentralized service discovery where ISP observation must be prevented.
+- **Desktop Companion & System Applications**: Tauri, Electron, and native desktop clients requiring tamper-proof IPC or telemetry conduits to remote backend clusters.
+- **Protected Microservice & Daemon Communication**: High-throughput headless daemons (Node.js / Rust / Go) exchanging structured binary messages across untrusted networks.
+- **Bypass & Censorship-Resistant Proxies**: Wire-level obfuscation allowing traffic to pass through restrictive enterprise firewalls, educational filters, and state-level DPI gateways.
+
+---
+
+## Supported Platforms & Environments
+
+ONP has zero native C/C++ compilation requirements and runs across all major operating systems, embedded architectures, and execution runtimes:
+
+### Operating Systems
+- **Windows**: Windows 10, Windows 11, Windows Server (x86_64, ARM64)
+- **Linux**: Ubuntu, Debian, Fedora, Arch, Alpine, CentOS, RHEL (x86_64, aarch64, musl, glibc)
+- **macOS**: Apple Silicon (M1/M2/M3/M4) and Intel (x86_64)
+- **Mobile**: Android and iOS (via WebView runtime or compiled Rust FFI static/dynamic libraries)
+
+### Web & Embedded Runtimes
+- **Desktop Frameworks**: Tauri (WebView2 on Windows, WebKitGTK on Linux, WKWebView on macOS), Electron, Wails
+- **Web Browsers**: Google Chrome, Mozilla Firefox, Apple Safari, Microsoft Edge, Opera, Brave
+- **Server Runtimes**: Node.js (18.x, 20.x, 22.x, 24.x), Bun (1.0+), Deno (1.30+)
+
+---
+
+## Supported Languages & Implementations
+
+| Language | Package / Module | Primary Capabilities |
+| :--- | :--- | :--- |
+| **Rust** | `crates/onp-core`<br>`crates/onp-transport` | High-performance zero-copy deserialization (`zerocopy`, `bytes`), Tokio async networking, `no_std` cryptographic core. |
+| **TypeScript / JavaScript** | `@jynxzio5/onp` | Pure WebCrypto & Noble ciphers, zero external C++ bindings, universal isomorphic support across Node.js, WebViews, and browsers. |
+| **C / C++** | FFI / Native Headers | Packed binary structure (`#pragma pack(1)`) directly compatible with C memory models; callable via Rust cdylib/staticlib bindings. |
+| **Python / Go / C# (.NET)** | Architecture Compatible | Fixed 8-byte envelope and standard RFC cryptographic primitives make native socket integration straightforward across any language supporting X25519 and ChaCha20-Poly1305. |
+
+---
+
+## Repository Branch Structure
+
+- **`main`**: The standalone RFC v1.0.0 raw TCP engine for high-throughput headless server daemons and low-level socket programming.
+- **`ONP-SDK`**: The full-stack production SDK matching Opela Nexus (universal WebCrypto for browsers/Tauri, Ed25519 host key authentication, WebSocket client transport adapter, request-response correlation, and the Universal Wire Tunnel).
+
+---
+
+## Packet Wire Layout
+
+Every ONP packet is structured into a strictly packed binary layout without dynamic padding:
 
 ```text
-Opela Nexus Protocol ONP/
-├── SPECIFICATION.md       # Formal RFC-grade binary wire protocol specification
-├── ARCHITECTURE.md        # Threat model, security boundaries & state machine diagrams
-├── rust/                  # Rust workspace & production libraries
-│   ├── Cargo.toml
-│   ├── onp-core/          # Protocol framing, crypto, session state & polymorphic opcodes
-│   ├── onp-transport/     # Tokio-based TCP framing client & server streams
-│   └── examples/          # Benchmarking echo server & client ping
-└── typescript/            # TypeScript / Node.js / Browser SDK
-    ├── package.json
-    ├── tsconfig.json
-    ├── src/               # Complete wire framing, WebCrypto/Node crypto & opcode mapping
-    └── examples/          # Client & server integration examples
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       Magic (0x4F, 0x4E)      |    Ver (0x01) |   Flags (1B)  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Payload Length (32-bit LE)               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   Nonce / Sequence (96 bits / 12B)            |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                    Encrypted Ciphertext                       |
+|           [ Dynamic Opcode (2B) + Payload (N Bytes) ]         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                 Poly1305 Authentication Tag (16B)             |
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
+
+### Framing Fields:
+- **Magic (2 Bytes)**: ASCII `ON` (`0x4F`, `0x4E`) identifying ONP framing.
+- **Version (1 Byte)**: Current protocol specification version (`0x01`).
+- **Flags (1 Byte)**: Bitmask controlling frame semantics (`HANDSHAKE_SYN = 0x01`, `HANDSHAKE_ACK = 0x02`, `ENCRYPTED = 0x04`, `COMPRESSED = 0x08`, `ERROR = 0x80`).
+- **Payload Length (4 Bytes)**: 32-bit little-endian unsigned integer indicating ciphertext byte length.
+- **Nonce (12 Bytes)**: 96-bit sequence number preventing replay and reordering attacks.
+- **Ciphertext**: Authenticated encrypted payload containing the 2-byte polymorphic opcode and application data.
+- **Poly1305 Tag (16 Bytes)**: Cryptographic message authentication code verifying wire integrity.
 
 ---
 
-## 🚀 Quick Start (Rust)
+## Quick Start: TypeScript / JavaScript
 
-```rust
-use onp_core::{OnpSession, LogicalOpcode, Packet};
+### Installation
+Add the GitHub Packages registry to your `.npmrc` file:
 
-// 1. Establish session with dynamic opcode seed
-let mut session = OnpSession::new_client();
-let syn_packet = session.create_handshake_syn()?;
-
-// 2. Transmit packet over wire...
-// After handshake:
-let ping_payload = b"PING_TIMESTAMP_12345678";
-let encrypted_frame = session.encrypt_packet(LogicalOpcode::SysPing, ping_payload)?;
-
-// 3. Receiver decrypts & automatically maps polymorphic opcode
-let (opcode, data) = server_session.decrypt_packet(&encrypted_frame)?;
-assert_eq!(opcode, LogicalOpcode::SysPing);
+```ini
+@jynxzio5:registry=https://npm.pkg.github.com
 ```
 
----
+Install the package:
 
-## 🚀 Quick Start (TypeScript / Node.js)
+```bash
+npm install @jynxzio5/onp
+```
+
+### WebSocket Client Example
 
 ```typescript
-import { OnpClientSession, LogicalOpcode } from './src';
+import { OnpWebSocketClient } from '@jynxzio5/onp';
 
-// 1. Initialize client session
-const client = new OnpClientSession();
-const synPacket = client.createHandshakeSyn();
+const client = new OnpWebSocketClient({
+  url: 'wss://example.com/ws',
+  autoConnect: true,
+});
 
-// 2. Encrypt application message with dynamic polymorphic opcode
-const payload = new TextEncoder().encode("Hello Opela Core");
-const frame = client.encrypt(LogicalOpcode.LobbyJoin, payload);
+client.on('connection_ready', async () => {
+  console.log('ONP session established with verified host identity.');
 
-// 3. Send over TCP / WebSocket
-socket.write(frame);
+  // 1. Send encrypted real-time event
+  client.send('user_presence', { status: 'online', channel: 'lobby' });
+
+  // 2. Correlated Request / Response
+  const response = await client.request('check_game_update', { appId: '480' }, 5000);
+  console.log('Response:', response);
+
+  // 3. Universal Wire Tunnel (REST over encrypted binary WebSocket)
+  const tunnelRes = await client.tunnelRequest('GET', 'https://api.internal/v1/config');
+  console.log('Tunnel Data:', tunnelRes.data);
+});
+
+client.on('direct_message', (payload) => {
+  console.log('Received decrypted message:', payload);
+});
 ```
 
 ---
 
-## 🔒 Cryptographic Primitives
+## Quick Start: Rust Core
 
-- **Key Agreement**: `Curve25519` (X25519 ECDH)
-- **Key Derivation**: `HKDF-SHA256` (RFC 5869)
-- **Authenticated Encryption**: `ChaCha20-Poly1305` (RFC 8439)
-- **Polymorphic Opcode Hash**: `HMAC-SHA256`
+Add the crate to your `Cargo.toml`:
+
+```toml
+[dependencies]
+onp-core = { path = "rust/onp-core" }
+tokio = { version = "1.0", features = ["full"] }
+```
+
+### Session Encryption & Decryption
+
+```rust
+use onp_core::session::OnpSession;
+use onp_core::constants::LogicalOpcode;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 1. Initialize client and server sessions
+    let mut client = OnpSession::new_client();
+    let mut server = OnpSession::new_server();
+
+    // 2. Execute Ephemeral Curve25519 Handshake
+    let syn_frame = client.create_handshake_syn()?;
+    let ack_frame = server.process_handshake_syn(&syn_frame)?;
+    client.process_handshake_ack(&ack_frame)?;
+
+    // 3. Encrypt payload with polymorphic opcode
+    let payload = b"Hello from Rust ONP Core";
+    let encrypted_frame = client.encrypt(LogicalOpcode::DataStream, payload)?;
+
+    // 4. Decrypt and verify payload
+    let (opcode, decrypted_bytes) = server.decrypt(&encrypted_frame)?;
+    println!("Resolved Opcode: {:?}", opcode);
+    println!("Decrypted String: {}", String::from_utf8_lossy(&decrypted_bytes));
+
+    Ok(())
+}
+```
 
 ---
 
-## 📄 License
-MIT License. Built with pride for Opela Nexus and high-performance privacy-centric applications.
+## Cryptographic Primitives Reference
+
+- **Key Agreement**: Curve25519 (X25519 ECDH) per session (RFC 7748)
+- **Host Authentication**: Ed25519 Digital Signatures over 96-byte handshake transcripts (RFC 8032)
+- **Key Derivation**: HKDF-SHA256 (RFC 5869)
+- **Authenticated Encryption**: ChaCha20-Poly1305 AEAD (RFC 8439)
+- **Polymorphic Opcode Mutation**: HMAC-SHA256
+- **Anti-Replay Protection**: 96-bit monotonic nonce sequence with a 64-packet sliding window filter
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
