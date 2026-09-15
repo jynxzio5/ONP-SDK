@@ -128,10 +128,12 @@ ONP has zero native C/C++ compilation requirements and runs across all major ope
 
 ---
 
-## Repository Branch Structure
+## Architecture & Modules
 
-- **`main`**: The standalone RFC v1.0.0 raw TCP engine for high-throughput headless server daemons and low-level socket programming.
-- **`ONP-SDK`**: The full-stack production SDK matching Opela Nexus (universal WebCrypto for browsers/Tauri, Ed25519 host key authentication, WebSocket client transport adapter, request-response correlation, and the Universal Wire Tunnel).
+- **Core Protocol Engine ([`rust/onp-core`](rust/onp-core/))**: High-throughput binary framing, ChaCha20-Poly1305 AEAD, X25519 ECDH, and seed-derived polymorphic opcode permutation.
+- **Async Network Transport ([`rust/onp-transport`](rust/onp-transport/))**: Tokio-based asynchronous TCP framing, codec encoders/decoders, and state machines.
+- **C-ABI Native FFI ([`rust/onp-ffi`](rust/onp-ffi/))**: C99 and C++ compatible dynamic (`.dll`/`.so`/`.dylib`) and static (`.lib`/`.a`) libraries for Unreal Engine, Unity, custom game engines, and mobile runtimes.
+- **TypeScript / JavaScript SDK ([`typescript/`](typescript/))**: Published as [`@opela-team/onp`](https://www.npmjs.com/package/@opela-team/onp) on npm for Node.js, WebViews (Tauri, Electron), and browsers.
 
 ---
 
