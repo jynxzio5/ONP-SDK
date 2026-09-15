@@ -1,9 +1,12 @@
 {
-  "name": "@opela/onp",
+  "name": "@jynxzio5/onp",
   "version": "1.0.0",
   "description": "Opela Nexus Protocol (ONP) client and server SDK for Node.js and TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "tsc",
     "test": "node --test dist/test/onp.test.js",
