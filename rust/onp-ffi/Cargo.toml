@@ -1,0 +1,13 @@
+[package]
+name = "onp-ffi"
+version = "1.0.0"
+edition = "2021"
+authors = ["Opela Nexus Architecture Group"]
+description = "C ABI FFI dynamic and static bindings for Opela Nexus Protocol (ONP)"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+onp-core = { path = "../onp-core" }

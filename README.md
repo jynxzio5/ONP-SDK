@@ -29,8 +29,13 @@ Comprehensive technical guides and RFC specifications are available in the [`doc
 - [Cryptographic Primitives Reference](docs/02-security-and-crypto/cryptographic-primitives.md)
 - [Polymorphic Rolling Opcodes Guide](docs/02-security-and-crypto/polymorphic-opcodes.md)
 - [Anti-Replay Sliding Window Filter](docs/02-security-and-crypto/anti-replay-window.md)
-- [Getting Started with TypeScript](docs/03-guides/getting-started-typescript.md)
-- [Getting Started with Rust Core](docs/03-guides/getting-started-rust.md)
+- [C and C++ Integration Guide](docs/03-guides/cpp-integration.md)
+- [Rust Integration Guide](docs/03-guides/getting-started-rust.md)
+- [TypeScript & JavaScript Guide](docs/03-guides/getting-started-typescript.md)
+- [Python Integration Guide](docs/03-guides/python-integration.md)
+- [C# / .NET & Unity Guide](docs/03-guides/csharp-dotnet.md)
+- [Go Integration Guide](docs/03-guides/golang-integration.md)
+- [Multi-Platform Deployment Guide](docs/03-guides/platforms.md)
 - [Universal ONP Wire Tunnel Guide](docs/03-guides/universal-wire-tunnel.md)
 - [Error Handling & Resilience](docs/03-guides/error-handling.md)
 - [Performance & Overhead Benchmarks](docs/04-benchmarks/performance-comparison.md)
@@ -110,10 +115,12 @@ ONP has zero native C/C++ compilation requirements and runs across all major ope
 
 | Language | Package / Module | Primary Capabilities |
 | :--- | :--- | :--- |
-| **Rust** | `crates/onp-core`<br>`crates/onp-transport` | High-performance zero-copy deserialization (`zerocopy`, `bytes`), Tokio async networking, `no_std` cryptographic core. |
-| **TypeScript / JavaScript** | `@jynxzio5/onp` | Pure WebCrypto & Noble ciphers, zero external C++ bindings, universal isomorphic support across Node.js, WebViews, and browsers. |
-| **C / C++** | FFI / Native Headers | Packed binary structure (`#pragma pack(1)`) directly compatible with C memory models; callable via Rust cdylib/staticlib bindings. |
-| **Python / Go / C# (.NET)** | Architecture Compatible | Fixed 8-byte envelope and standard RFC cryptographic primitives make native socket integration straightforward across any language supporting X25519 and ChaCha20-Poly1305. |
+| **Rust** | [`rust/onp-core`](rust/onp-core/)<br>[`rust/onp-transport`](rust/onp-transport/) | High-performance zero-copy deserialization (`bytes`), Tokio async networking, polymorphic opcode engine, ChaCha20-Poly1305. |
+| **TypeScript / JavaScript** | [`typescript/`](typescript/) | Pure WebCrypto & Noble ciphers, zero external C++ bindings, universal isomorphic support across Node.js, WebViews, and browsers. |
+| **C / C++** | [`rust/onp-ffi`](rust/onp-ffi/)<br>[`include/onp.h`](rust/onp-ffi/include/onp.h) | Stable C-ABI dynamic (`.dll`/`.so`/`.dylib`) and static (`.lib`/`.a`) libraries for Unreal Engine, custom game engines, and native servers. |
+| **Python** | [`docs/03-guides/python-integration.md`](docs/03-guides/python-integration.md) | Standard library `ctypes` bindings and `asyncio` networking with native performance. |
+| **C# (.NET) / Unity** | [`docs/03-guides/csharp-dotnet.md`](docs/03-guides/csharp-dotnet.md) | P/Invoke `DllImport`, memory pinning, and Unity game engine client integration. |
+| **Go** | [`docs/03-guides/golang-integration.md`](docs/03-guides/golang-integration.md) | Cgo bindings with zero-copy buffer passing and `net.Conn` streaming sockets. |
 
 ---
 
@@ -244,6 +251,53 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+---
+
+## Quick Start: C / C++ Native Engine
+
+Compile the native C-ABI shared library with `cargo build --release -p onp-ffi`. Include `onp.h` and link against `onp_ffi`:
+
+```cpp
+#include <iostream>
+#include <vector>
+#include "onp.h"
+
+int main() {
+    // 1. Allocate sessions
+    OnpSession* client = onp_session_new_client();
+    OnpSession* server = onp_session_new_server();
+
+    // 2. Perform 3-step handshake
+    std::vector<uint8_t> syn(256), ack(256);
+    size_t syn_len = 0, ack_len = 0;
+
+    onp_session_create_handshake_syn(client, syn.data(), syn.size(), &syn_len);
+    onp_session_process_handshake_syn(server, syn.data(), syn_len, ack.data(), ack.size(), &ack_len);
+    onp_session_process_handshake_ack(client, ack.data(), ack_len);
+
+    // 3. Encrypt application payload
+    std::string msg = "Encrypted packet from C++ engine";
+    std::vector<uint8_t> frame(msg.size() + onp_overhead_size());
+    size_t frame_len = 0;
+    onp_session_encrypt(client, ONP_OPCODE_LOBBY_JOIN, (const uint8_t*)msg.data(), msg.size(), frame.data(), frame.size(), &frame_len);
+
+    // 4. Decrypt and verify payload
+    std::vector<uint8_t> decrypted(frame_len);
+    size_t dec_len = 0;
+    uint16_t opcode = 0;
+    onp_session_decrypt(server, frame.data(), frame_len, &opcode, decrypted.data(), decrypted.size(), &dec_len);
+
+    std::cout << "Decrypted (" << dec_len << " bytes): " << std::string((char*)decrypted.data(), dec_len) << std::endl;
+
+    // 5. Clean up memory
+    onp_session_destroy(client);
+    onp_session_destroy(server);
+    return 0;
+}
+```
+
+See the [C and C++ Integration Guide](docs/03-guides/cpp-integration.md) for full details, socket loops, and Unreal Engine setup.
 
 ---
 
